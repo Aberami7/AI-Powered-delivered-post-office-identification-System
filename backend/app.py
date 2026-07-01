@@ -13,7 +13,7 @@ API_KEY = os.environ.get("GOOGLE_API_KEY")
 client = genai.Client(api_key=API_KEY) if API_KEY else None
 model_name = "gemini-2.0-flash"
 
-# --- Smart Caching (AI லிமிட் சீக்கிரம் தீராமல் இருக்க) ---
+# --- Smart Caching 
 ai_cache = {}
 
 # Dataset Loading
@@ -27,19 +27,19 @@ try:
     df["Pincode"] = df["Pincode"].astype(str).str.strip()
     df["Office_Lower"] = df["OfficeName"].astype(str).str.lower().str.strip()
     df["District_Lower"] = df["District"].astype(str).str.lower().str.strip()
-    print(f"✅ PostFinder AI Backend Ready! Loaded {len(df)} records.")
+    print(f"PostFinder AI Backend Ready! Loaded {len(df)} records.")
 except Exception as e:
-    print(f"❌ Dataset Error: {e}")
+    print(f" Dataset Error: {e}")
 
 # --- AI Insight Logic with Cache & Random Fallback ---
 def get_smart_insight(o_name, o_type, dist, state):
     cache_key = f"{o_name}_{o_type}_{dist}"
     
-    # 1. ஏற்கனவே தேடியிருந்தால் Cache-ல் இருந்து எடுக்கும்
+  
     if cache_key in ai_cache:
         return ai_cache[cache_key]
 
-    # 2. AI மூலம் முயற்சி செய்தல் (Quota இருந்தால்)
+  
     if client:
         try:
             prompt = f"Give a unique 10-word professional insight about {o_name} ({o_type}) post office in {dist}, {state}."
@@ -51,7 +51,7 @@ def get_smart_insight(o_name, o_type, dist, state):
         except Exception as e:
             print(f"⚠️ AI Quota Limit: Using Random Fallback.")
 
-    # 3. AI ஃபெயில் ஆனால்: ரேண்டம் மேனுவல் இன்சைட்ஸ் (ஒவ்வொரு கார்டுக்கும் வேற வேற வரும்)
+
     fallbacks = [
         f"Critical {o_type} node in {dist} division for postal services.",
         f"A vital link for {o_name} residents, ensuring smooth delivery.",
@@ -63,17 +63,17 @@ def get_smart_insight(o_name, o_type, dist, state):
     ]
     return random.choice(fallbacks)
 
-# --- 1. SEARCH ROUTE (624620 போன்ற பின்கோடிற்கு அத்தனையையும் காட்டும்) ---
+# --- 1. SEARCH ROUTE 
 @app.route("/search", methods=["GET"])
 def search():
     query = request.args.get("query", "").strip().lower()
     if not query: return jsonify({"postoffices": []})
 
-    # Pincode என்றால் அத்தனையையும் எடுக்கும் (No head limit)
+    # Pincode
     if query.isdigit() and len(query) == 6:
         matches = df[df["Pincode"] == query]
     else:
-        # பெயராக இருந்தால் மட்டும் முதல் 20 முடிவுகள்
+  
         matches = df[df["Office_Lower"].str.contains(query, na=False)].head(20)
 
     results = []
